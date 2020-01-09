@@ -43,12 +43,18 @@ func (ct checksumType) String() string {
 	}
 }
 
+const (
+	ReplaceFromChecksumFilename = `<FNAMEARCH>`
+)
+
 // Update checksums to file(s)
 // File must be in format
 // <checksum> <file path>
 // Filename in checksum file must be in format
 // something-linux-<ARCH>.something
-func GetChecksumsFromFile(chtype checksumType, path string, urlfmt string) (f Files) {
+//
+// String ReplaceFromChecksumFilename is replaced with architecture name from checksum filename's architecture
+func GetChecksumsFromFile(chtype checksumType, path string, prefix string, suffix string) (f Files) {
 	f = make(Files)
 
 	sumsFile, err := ioutil.ReadFile(path)
@@ -86,9 +92,11 @@ func GetChecksumsFromFile(chtype checksumType, path string, urlfmt string) (f Fi
 			log.Fatalf(`architecture %v not found`, goarch)
 		}
 
+		newSuffix := strings.ReplaceAll(suffix, ReplaceFromChecksumFilename, goarch)
+
 		f[linuxarch] = append(f[linuxarch],
 			Source{
-				URL: fmt.Sprintf(urlfmt, linuxarch),
+				URL: fmt.Sprintf(`%s%s`, prefix, newSuffix),
 				Checksums: map[string]string{
 					chtype.String(): checksum,
 				},
