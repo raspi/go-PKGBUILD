@@ -117,15 +117,15 @@ func (t Template) optionalToString() (out string) {
 func (t Template) getDepends() (m map[string][]string) {
 	m = make(map[string][]string)
 	for _, arch := range t.getDependsArchList() {
-		// Needed for running
-		key := `Dependencies`
+		// Packages needed for running
+		key := `depends`
 		if arch != `` {
 			key = fmt.Sprintf(`%s_%s`, key, arch)
 		}
 
 		m[key] = t.Dependencies[arch].Packages
 
-		// Needed to make package
+		// Needed to make package from source
 		key = `makedepends`
 		if arch != `` {
 			key = fmt.Sprintf(`%s_%s`, key, arch)
@@ -133,7 +133,7 @@ func (t Template) getDepends() (m map[string][]string) {
 
 		m[key] = t.Dependencies[arch].BuildPackages
 
-		// Needed for testing
+		// Needed for running test(s)
 		key = `checkdepends`
 		if arch != `` {
 			key = fmt.Sprintf(`%s_%s`, key, arch)
