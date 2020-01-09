@@ -2,4 +2,6 @@
 
 Generate Arch Linux PKGBUILD from template
 
-Used by https://github.com/raspi/Json2ArchPkgBuild
+## Who is using this?
+* https://github.com/raspi/Json2ArchPkgBuild
+* https://github.com/raspi/heksa
