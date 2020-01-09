@@ -1,0 +1,319 @@
+package PKGBUILD
+
+// Convert template to PKGBUILD file
+
+import (
+	"bytes"
+	"fmt"
+	"regexp"
+	"sort"
+	"strings"
+	"time"
+)
+
+func (t Template) getArchList() (l []string) {
+	for arch, _ := range t.Files {
+		l = append(l, arch)
+	}
+
+	sort.Strings(l)
+	return l
+}
+
+func (t Template) sourceToMap() (sources map[string][]string) {
+	sources = make(map[string][]string)
+
+	for _, arch := range t.getArchList() {
+		for _, src := range t.Files[arch] {
+			key := `source`
+			if arch != `` {
+				key = fmt.Sprintf(`%s_%s`, key, arch)
+			}
+
+			dest := src.URL
+			if src.Alias != `` {
+				dest = fmt.Sprintf(`%s::%s`, src.Alias, dest)
+			}
+
+			sources[key] = append(sources[key], dest)
+		}
+
+		for _, src := range t.Files[arch] {
+			var checksumtypes []string
+			for ctype := range src.Checksums {
+				checksumtypes = append(checksumtypes, ctype)
+			}
+
+			for _, ctype := range checksumtypes {
+				key := fmt.Sprintf(`%ssums_%s`, ctype, arch)
+				sources[key] = append(sources[key], src.Checksums[ctype])
+			}
+		}
+	}
+
+	return sources
+}
+
+func (t Template) sourceToString() string {
+	srcs := t.sourceToMap()
+	var sorted []string
+	for k, _ := range srcs {
+		sorted = append(sorted, k)
+	}
+
+	sort.Strings(sorted)
+
+	var arr []string
+	for _, v := range sorted {
+		presuf := `'`
+		if strings.HasPrefix(v, `source`) {
+			presuf = `"`
+		}
+		m := srcs[v]
+		arr = append(arr, fmt.Sprintf(`%s=(%s)`, v, wrapStrings(m, ` `, presuf, presuf)))
+	}
+
+	return strings.Join(arr, "\n")
+}
+
+func (t Template) validateName(name string) (errs []error) {
+	if strings.HasPrefix(name, `-`) {
+		errs = append(errs, fmt.Errorf(`%q can't start with '-'`, name))
+	}
+
+	if strings.HasPrefix(name, `.`) {
+		errs = append(errs, fmt.Errorf(`%q can't start with '.'`, name))
+	}
+
+	validRe := regexp.MustCompile(`^[a-z0-9_+@\.\-]+$`)
+
+	if !validRe.MatchString(name) {
+		errs = append(errs, fmt.Errorf(`invalid characters in name %q`, name))
+	}
+
+	return errs
+}
+
+func (t Template) Validate() (errs []error) {
+
+	if t.Maintainer == `` {
+		errs = append(errs, fmt.Errorf(`maintainer is empty`))
+	}
+
+	if t.MaintainerEmail == `` {
+		errs = append(errs, fmt.Errorf(`maintainer email is empty`))
+	}
+
+	if len(t.Name) == 0 {
+		errs = append(errs, fmt.Errorf(`name is empty`))
+	} else {
+		for idx, name := range t.Name {
+			E := t.validateName(name)
+			if E != nil {
+				for _, ER := range E {
+					errs = append(errs, fmt.Errorf(`error in name #%d: %v`, idx, ER))
+				}
+			}
+		}
+	}
+
+	if t.Version == `` {
+		errs = append(errs, fmt.Errorf(`version is empty`))
+	} else {
+		for _, nv := range []string{`/`, `-`, ` `, `:`} {
+			if strings.Contains(t.Version, nv) {
+				errs = append(errs, fmt.Errorf(`invalid character in version %q: %q`, t.Version, nv))
+			}
+		}
+	}
+
+	if t.Release == 0 {
+		errs = append(errs, fmt.Errorf(`release should be at least 1`))
+	}
+
+	if len(t.Licenses) == 0 {
+		errs = append(errs, fmt.Errorf(`no licence(s) given`))
+	}
+
+	if t.ShortDescription == `` {
+		errs = append(errs, fmt.Errorf(`short description is empty`))
+	} else {
+		for _, nv := range []string{"\t", "\n", "\r"} {
+			if strings.Contains(t.ShortDescription, nv) {
+				errs = append(errs, fmt.Errorf(`invalid character in short description %q: %q`, t.ShortDescription, nv))
+			}
+		}
+	}
+
+	if t.URL == `` {
+		errs = append(errs, fmt.Errorf(`url is empty`))
+	}
+
+	return errs
+}
+
+func (t Template) getDependsArchList() (l []string) {
+	for arch, _ := range t.Dependencies {
+		l = append(l, arch)
+	}
+	return l
+}
+
+func (t Template) getOptPackageArchList() (l []string) {
+	for arch, _ := range t.OptionalPackages {
+		l = append(l, arch)
+	}
+	return l
+}
+
+// Optional packages
+func (t Template) getOptionalPackages() (m map[string][]string) {
+	m = make(map[string][]string)
+	for _, arch := range t.getOptPackageArchList() {
+		for _, opt := range t.OptionalPackages[arch] {
+			key := `optdepends`
+			if arch != `` {
+				key = fmt.Sprintf(`%v_%v`, key, arch)
+			}
+			m[key] = append(m[key], fmt.Sprintf(`%s: %s`, opt.Package, opt.Reason))
+		}
+	}
+
+	return m
+}
+
+func (t Template) optionalToString() (out string) {
+	var arr []string
+	for arch, opt := range t.getOptionalPackages() {
+		arr = append(arr, fmt.Sprintf(`%s=(%s)`, arch, wrapStrings(opt, ` `, `'`, `'`)))
+	}
+	return strings.Join(arr, "\n")
+}
+
+// Dependencies needed
+func (t Template) getDepends() (m map[string][]string) {
+	m = make(map[string][]string)
+	for _, arch := range t.getDependsArchList() {
+		// Needed for running
+		key := `Dependencies`
+		if arch != `` {
+			key = fmt.Sprintf(`%s_%s`, key, arch)
+		}
+
+		m[key] = t.Dependencies[arch].Packages
+
+		// Needed to make package
+		key = `makedepends`
+		if arch != `` {
+			key = fmt.Sprintf(`%s_%s`, key, arch)
+		}
+
+		m[key] = t.Dependencies[arch].BuildPackages
+
+		// Needed for testing
+		key = `checkdepends`
+		if arch != `` {
+			key = fmt.Sprintf(`%s_%s`, key, arch)
+		}
+
+		m[key] = t.Dependencies[arch].TestPackages
+	}
+
+	return m
+}
+
+func (t Template) dependsToString() string {
+	var arr []string
+	for k, v := range t.getDepends() {
+		arr = append(arr, fmt.Sprintf(`%s=(%s)`+"\n", k, wrapStrings(v, ` `, `'`, `'`)))
+	}
+	return strings.Join(arr, "\n")
+}
+
+// Convert to PKGBUILD file
+func (t Template) String() string {
+	var out bytes.Buffer
+
+	fmt.Fprintf(&out, `# Maintainer: %s <%s>`+"\n", t.Maintainer, t.MaintainerEmail)
+	fmt.Fprintf(&out, `# Generated at: %s `+"\n", time.Now())
+	fmt.Fprintln(&out)
+
+	if len(t.Name) == 1 {
+		fmt.Fprintf(&out, `pkgname=%v`+"\n", t.Name[0])
+	} else {
+		fmt.Fprintf(&out, `pkgname=%v`+"\n", wrapStrings(t.Name, ` `, ``, ``))
+	}
+
+	fmt.Fprintf(&out, `pkgver=%v`+"\n", t.Version)
+	fmt.Fprintf(&out, `pkgrel=%v`+"\n", t.Release)
+
+	epoch := t.ReleaseTime.Unix()
+
+	if epoch > 0 {
+		fmt.Fprintf(&out, `epoch=%v`+"\n", epoch)
+	}
+
+	fmt.Fprintf(&out, `pkgdesc=%q`+"\n", t.ShortDescription)
+	fmt.Fprintf(&out, `url=%q`+"\n", t.URL)
+	fmt.Fprintf(&out, `license=(%v)`+"\n", wrapStrings(t.Licenses, ` `, `'`, `'`))
+	fmt.Fprintf(&out, `arch=(%v)`+"\n", wrapStrings(t.getArchList(), ` `, `'`, `'`))
+
+	if t.Install != `` {
+		fmt.Fprintf(&out, `install=%v`+"\n", t.Install)
+	}
+
+	if t.ChangeLogFile != `` {
+		fmt.Fprintf(&out, `changelog=%v`+"\n", t.ChangeLogFile)
+	}
+
+	if len(t.ValidPGPKeys) > 0 {
+		fmt.Fprintf(&out, `validpgpkeys=(%v)`+"\n", wrapStrings(t.ValidPGPKeys, ` `, `'`, `'`))
+	}
+
+	if len(t.NoExtractFiles) > 0 {
+		fmt.Fprintf(&out, `noextract=(%v)`+"\n", wrapStrings(t.NoExtractFiles, ` `, `'`, `'`))
+	}
+
+	if len(t.Groups) > 0 {
+		fmt.Fprintf(&out, `groups=(%v)`+"\n", wrapStrings(t.Groups, ` `, `'`, `'`))
+	}
+
+	if len(t.Backup) > 0 {
+		fmt.Fprintf(&out, `backup=(%v)`+"\n", wrapStrings(t.Backup, ` `, `'`, `'`))
+	}
+
+	fmt.Fprint(&out, t.dependsToString())
+	fmt.Fprint(&out, t.optionalToString())
+
+	fmt.Fprintln(&out, t.sourceToString())
+
+	if len(t.Commands.Prepare) > 0 {
+		fmt.Fprintln(&out, "\n"+`prepare() {`)
+		fmt.Fprint(&out, `  `)
+		fmt.Fprint(&out, strings.Join(t.Commands.Prepare, "\n  "))
+		fmt.Fprintln(&out, "\n}")
+	}
+
+	if len(t.Commands.Build) > 0 {
+		fmt.Fprintln(&out, "\n"+`build() {`)
+		fmt.Fprint(&out, `  `)
+		fmt.Fprint(&out, strings.Join(t.Commands.Build, "\n  "))
+		fmt.Fprintln(&out, "\n}")
+	}
+
+	if len(t.Commands.Test) > 0 {
+		fmt.Fprintln(&out, "\n"+`check() {`)
+		fmt.Fprint(&out, `  `)
+		fmt.Fprint(&out, strings.Join(t.Commands.Test, "\n  "))
+		fmt.Fprintln(&out, "\n}")
+	}
+
+	if len(t.Commands.Install) > 0 {
+		fmt.Fprintln(&out, "\n"+`package() {`)
+		fmt.Fprint(&out, `  `)
+		fmt.Fprint(&out, strings.Join(t.Commands.Install, "\n  "))
+		fmt.Fprintln(&out, "\n}")
+	}
+
+	return out.String()
+}
