@@ -2,6 +2,7 @@ package PKGBUILD
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 )
 
@@ -58,6 +59,24 @@ func (t Template) Validate() (errs []error) {
 
 	if t.URL == `` {
 		errs = append(errs, fmt.Errorf(`url is empty`))
+	}
+
+	return errs
+}
+
+func (t Template) validateName(name string) (errs []error) {
+	if strings.HasPrefix(name, `-`) {
+		errs = append(errs, fmt.Errorf(`%q can't start with '-'`, name))
+	}
+
+	if strings.HasPrefix(name, `.`) {
+		errs = append(errs, fmt.Errorf(`%q can't start with '.'`, name))
+	}
+
+	validRe := regexp.MustCompile(`^[a-z0-9_+@\.\-]+$`)
+
+	if !validRe.MatchString(name) {
+		errs = append(errs, fmt.Errorf(`invalid characters in name %q`, name))
 	}
 
 	return errs

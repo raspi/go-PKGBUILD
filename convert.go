@@ -5,7 +5,6 @@ package PKGBUILD
 import (
 	"bytes"
 	"fmt"
-	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -74,24 +73,6 @@ func (t Template) sourceToString() string {
 	}
 
 	return strings.Join(arr, "\n")
-}
-
-func (t Template) validateName(name string) (errs []error) {
-	if strings.HasPrefix(name, `-`) {
-		errs = append(errs, fmt.Errorf(`%q can't start with '-'`, name))
-	}
-
-	if strings.HasPrefix(name, `.`) {
-		errs = append(errs, fmt.Errorf(`%q can't start with '.'`, name))
-	}
-
-	validRe := regexp.MustCompile(`^[a-z0-9_+@\.\-]+$`)
-
-	if !validRe.MatchString(name) {
-		errs = append(errs, fmt.Errorf(`invalid characters in name %q`, name))
-	}
-
-	return errs
 }
 
 func (t Template) getDependsArchList() (l []string) {
