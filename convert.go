@@ -148,6 +148,9 @@ func (t Template) getDepends() (m map[string][]string) {
 func (t Template) dependsToString() string {
 	var arr []string
 	for k, v := range t.getDepends() {
+		if len(v) == 0 {
+			continue
+		}
 		arr = append(arr, fmt.Sprintf(`%s=(%s)`+"\n", k, wrapStrings(v, ` `, `'`, `'`)))
 	}
 	return strings.Join(arr, "\n")
