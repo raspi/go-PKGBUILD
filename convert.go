@@ -206,7 +206,9 @@ func (t Template) String() string {
 	}
 
 	fmt.Fprint(&out, t.dependsToString())
-	fmt.Fprint(&out, t.optionalToString())
+	if len(t.OptionalPackages) > 0 {
+		fmt.Fprint(&out, t.optionalToString()+"\n")
+	}
 
 	fmt.Fprintln(&out, t.sourceToString())
 
