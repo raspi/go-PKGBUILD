@@ -138,6 +138,7 @@ func New(sources Files, cmds Commands, depends map[string]Depends, optional map[
 	}
 }
 
+// Read template from JSON file
 func FromJson(source []byte) (tpl Template, err error) {
 	err = json.Unmarshal(source, &tpl)
 	return tpl, err
