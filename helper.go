@@ -13,3 +13,14 @@ func wrapStrings(source []string, join string, prefix string, suffix string) str
 	}
 	return strings.Join(wrapped, join)
 }
+
+// Rewrite Go's arch names to Arch Linux ones
+var GoArchToLinuxArch = map[string]string{
+	`amd64`:   `x86_64`,
+	`arm`:     `arm`,
+	`arm64`:   `aarch64`,
+	`ppc64`:   `ppc64`,
+	`ppc64le`: `ppc64le`,
+	`x86_64`:  `x86_64`,
+	`aarch64`: `aarch64`,
+}
