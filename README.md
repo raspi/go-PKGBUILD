@@ -4,7 +4,7 @@
 
 # go-PKGBUILD library
 
-Generate Arch Linux PKGBUILD string from template struct
+Generate Arch Linux PKGBUILD string from template struct. See `man PKGBUILD`.
 
 ## Install
 
