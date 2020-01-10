@@ -43,8 +43,7 @@ func (ct checksumType) String() string {
 // Update checksums to file(s)
 // File must be in format
 // <checksum> <file path>
-// String ReplaceFromChecksumFilename is replaced with architecture name from checksum filename's architecture
-func GetChecksumsFromFile(chtype checksumType, path string, fn func(fpath string) (url string, arch string, alias string)) (f Files) {
+func GetChecksumsFromFile(chtype checksumType, path string, fn func(fpath string) (url, arch, alias string)) (f Files) {
 	f = make(Files)
 	lines, err := GetLinesFromFile(path)
 
