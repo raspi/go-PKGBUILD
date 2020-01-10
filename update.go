@@ -120,7 +120,11 @@ func (t Template) DefaultChecksumFilesFunc(fpath string) (url, arch, alias strin
 	}
 
 	filename = strings.Replace(filename, t.Name[0], `$pkgname`, 1)
-	filename = strings.Replace(filename, t.Version, `$pkgver`, 1)
+
+	if strings.Contains(filename, `$pkgname`) {
+		// Some other package's version might also match, so only replace package's version
+		filename = strings.Replace(filename, t.Version, `$pkgver`, 1)
+	}
 
 	arch, ok := GoArchToLinuxArch[match[1]]
 	if !ok {
