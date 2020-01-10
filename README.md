@@ -9,7 +9,7 @@ Generate Arch Linux PKGBUILD string from template struct
 * Yours?
   * Send pull request or open new issue
  
- ## Example JSON
+ ## Example template as JSON
  
  ```json
  {
