@@ -51,7 +51,7 @@ const (
 // File must be in format
 // <checksum> <file path>
 // Filename in checksum file must be in format
-// something-linux-<ARCH>.something
+// something-linux-<FNAMEARCH>.something
 //
 // String ReplaceFromChecksumFilename is replaced with architecture name from checksum filename's architecture
 func GetChecksumsFromFile(chtype checksumType, path string, prefix string, suffix string) (f Files) {
