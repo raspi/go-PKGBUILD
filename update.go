@@ -4,7 +4,9 @@ import (
 	"bufio"
 	"bytes"
 	"io/ioutil"
+	"path"
 	"regexp"
+	"strings"
 )
 
 type checksumType uint8
@@ -98,4 +100,33 @@ func GetLinesFromFile(path string) (lines []string, err error) {
 	}
 
 	return lines, nil
+}
+
+// How architecture can be found from file name
+var DefaultArchRegEx = regexp.MustCompile(`linux-([^\.]+)\.`)
+
+func (t Template) DefaultChecksumFilesFunc(fpath string) (url, arch, alias string) {
+	fpath = strings.TrimLeft(fpath, `.`)
+	fpath = strings.TrimLeft(fpath, `/`)
+	filename := path.Base(fpath)
+
+	if !strings.Contains(filename, `linux`) {
+		return ``, ``, ``
+	}
+
+	match := DefaultArchRegEx.FindStringSubmatch(filename)
+	if len(match) == 0 {
+		return ``, ``, ``
+	}
+
+	filename = strings.Replace(filename, t.Name[0], `$pkgname`, 1)
+	filename = strings.Replace(filename, t.Version, `$pkgver`, 1)
+
+	arch, ok := GoArchToLinuxArch[match[1]]
+	if !ok {
+		return ``, ``, ``
+	}
+
+	url = path.Join(t.PackageURLPrefix, filename)
+	return url, arch, alias
 }
