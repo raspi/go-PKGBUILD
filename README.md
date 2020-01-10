@@ -1,4 +1,8 @@
-# go-PKGBUILD
+![GitHub All Releases](https://img.shields.io/github/downloads/raspi/go-PKGBUILD/total?style=for-the-badge)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/raspi/go-PKGBUILD?style=for-the-badge)
+![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/raspi/go-PKGBUILD?style=for-the-badge)
+
+# go-PKGBUILD library
 
 Generate Arch Linux PKGBUILD string from template struct
 
