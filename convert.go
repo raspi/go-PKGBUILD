@@ -218,36 +218,31 @@ func (t Template) String() string {
 	// Calculate version from source package
 	if len(t.Commands.Version) > 0 {
 		fmt.Fprintln(&out, "\n"+`pkgver() {`)
-		fmt.Fprint(&out, `  `)
-		fmt.Fprint(&out, strings.Join(t.Commands.Version, "\n  "))
+		fmt.Fprint(&out, `  `+strings.Join(t.Commands.Version, "\n  "))
 		fmt.Fprintln(&out, "\n}")
 	}
 
 	if len(t.Commands.Prepare) > 0 {
 		fmt.Fprintln(&out, "\n"+`prepare() {`)
-		fmt.Fprint(&out, `  `)
-		fmt.Fprint(&out, strings.Join(t.Commands.Prepare, "\n  "))
+		fmt.Fprint(&out, `  `+strings.Join(t.Commands.Prepare, "\n  "))
 		fmt.Fprintln(&out, "\n}")
 	}
 
 	if len(t.Commands.Build) > 0 {
 		fmt.Fprintln(&out, "\n"+`build() {`)
-		fmt.Fprint(&out, `  `)
-		fmt.Fprint(&out, strings.Join(t.Commands.Build, "\n  "))
+		fmt.Fprint(&out, `  `+strings.Join(t.Commands.Build, "\n  "))
 		fmt.Fprintln(&out, "\n}")
 	}
 
 	if len(t.Commands.Test) > 0 {
 		fmt.Fprintln(&out, "\n"+`check() {`)
-		fmt.Fprint(&out, `  `)
-		fmt.Fprint(&out, strings.Join(t.Commands.Test, "\n  "))
+		fmt.Fprint(&out, `  `+strings.Join(t.Commands.Test, "\n  "))
 		fmt.Fprintln(&out, "\n}")
 	}
 
 	if len(t.Commands.Install) > 0 {
 		fmt.Fprintln(&out, "\n"+`package() {`)
-		fmt.Fprint(&out, `  `)
-		fmt.Fprint(&out, strings.Join(t.Commands.Install, "\n  "))
+		fmt.Fprint(&out, `  `+strings.Join(t.Commands.Install, "\n  "))
 		fmt.Fprintln(&out, "\n}")
 	}
 
