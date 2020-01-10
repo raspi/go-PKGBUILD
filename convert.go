@@ -215,6 +215,14 @@ func (t Template) String() string {
 
 	fmt.Fprintln(&out, t.sourceToString())
 
+	// Calculate version from source package
+	if len(t.Commands.Version) > 0 {
+		fmt.Fprintln(&out, "\n"+`pkgver() {`)
+		fmt.Fprint(&out, `  `)
+		fmt.Fprint(&out, strings.Join(t.Commands.Version, "\n  "))
+		fmt.Fprintln(&out, "\n}")
+	}
+
 	if len(t.Commands.Prepare) > 0 {
 		fmt.Fprintln(&out, "\n"+`prepare() {`)
 		fmt.Fprint(&out, `  `)
