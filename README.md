@@ -17,6 +17,10 @@ Generate Arch Linux PKGBUILD string from template struct. See `man PKGBUILD`.
 * Yours?
   * Send pull request or open new issue
  
+ ## Notes
+ 
+ * Use empty string (`""`) as CPU architecture when referencing source files and checksums without CPU architecture
+  
  ## Example template as JSON
  
  ```json
