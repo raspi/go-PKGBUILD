@@ -3,7 +3,9 @@ package PKGBUILD
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"io/ioutil"
+	"net/url"
 	"path"
 	"regexp"
 	"strings"
@@ -105,18 +107,18 @@ func GetLinesFromFile(path string) (lines []string, err error) {
 // How architecture can be found from file name
 var DefaultArchRegEx = regexp.MustCompile(`linux-([^\.]+)\.`)
 
-func (t Template) DefaultChecksumFilesFunc(fpath string) (url, arch, alias string) {
+func (t Template) DefaultChecksumFilesFunc(fpath string) (urlAddress, arch, alias string, err error) {
 	fpath = strings.TrimLeft(fpath, `.`)
 	fpath = strings.TrimLeft(fpath, `/`)
 	filename := path.Base(fpath)
 
 	if !strings.Contains(filename, `linux`) {
-		return ``, ``, ``
+		return ``, ``, ``, fmt.Errorf(`'linux' was not found in filename`)
 	}
 
 	match := DefaultArchRegEx.FindStringSubmatch(filename)
 	if len(match) == 0 {
-		return ``, ``, ``
+		return ``, ``, ``, fmt.Errorf(`filename %#s was not found in %v`, filename, DefaultArchRegEx)
 	}
 
 	filename = strings.Replace(filename, t.Name[0], `$pkgname`, 1)
@@ -128,9 +130,15 @@ func (t Template) DefaultChecksumFilesFunc(fpath string) (url, arch, alias strin
 
 	arch, ok := GoArchToLinuxArch[match[1]]
 	if !ok {
-		return ``, ``, ``
+		return ``, ``, ``, fmt.Errorf(`arch %#s was not found`, match[1])
 	}
 
-	url = path.Join(t.PackageURLPrefix, filename)
-	return url, arch, alias
+	u, err := url.Parse(t.PackageURLPrefix)
+	if err != nil {
+		return ``, ``, ``, fmt.Errorf(`couldn't parse url: %w`, err)
+	}
+
+	u.Path = path.Join(u.Path, filename)
+	urlAddress = u.String()
+	return urlAddress, arch, alias, nil
 }
