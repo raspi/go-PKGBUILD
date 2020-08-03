@@ -184,6 +184,10 @@ func (t Template) String() string {
 	_, _ = fmt.Fprintf(&out, `license=(%v)`+"\n", wrapStrings(t.Licenses, ` `, `'`, `'`))
 	_, _ = fmt.Fprintf(&out, `arch=(%v)`+"\n", wrapStrings(t.getArchList(), ` `, `'`, `'`))
 
+	if len(t.Options) > 0 {
+		_, _ = fmt.Fprintf(&out, `options=(%v)`+"\n", strings.Join(t.Options, ` `))
+	}
+
 	if t.Install != `` {
 		_, _ = fmt.Fprintf(&out, `install=%v`+"\n", t.Install)
 	}
