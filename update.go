@@ -47,7 +47,7 @@ func (ct checksumType) String() string {
 // Update checksums to file(s)
 // File must be in format
 // <checksum> <file path>
-func GetChecksumsFromFile(chtype checksumType, path string, fn func(fpath string) (url, arch, alias string)) (f Files) {
+func GetChecksumsFromFile(chtype checksumType, path string, fn func(fpath string) (url, arch, alias string, err error)) (f Files, err error) {
 	f = make(Files)
 	lines, err := GetLinesFromFile(path)
 
@@ -65,7 +65,10 @@ func GetChecksumsFromFile(chtype checksumType, path string, fn func(fpath string
 		checksum := matches[1]
 		fname := matches[2]
 
-		url, arch, alias := fn(fname)
+		url, arch, alias, err := fn(fname)
+		if err != nil {
+			return f, err
+		}
 
 		if url == `` {
 			continue
@@ -85,7 +88,7 @@ func GetChecksumsFromFile(chtype checksumType, path string, fn func(fpath string
 		f[arch] = append(f[arch], newSource)
 	}
 
-	return f
+	return f, nil
 }
 
 // Read a file and split with new line separator
